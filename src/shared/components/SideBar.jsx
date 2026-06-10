@@ -1,17 +1,22 @@
 import { Link, useLocation } from "react-router-dom";
+import logo from "../../assets/logo.png";
 
 export default function Sidebar({ links }) {
   const location = useLocation();
 
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-800">PROjeta</h2>
+      
+      <div className="p-6 flex justify-center border-b border-gray-200">
+        <img
+          src={logo}
+          alt="PROjeta"
+          className="h-16 w-auto object-contain"
+        />
       </div>
 
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className="flex-1 px-4 space-y-2 mt-4">
         {links.map((link) => {
-          // Check if the current URL matches the link's path to highlight it
           const isActive = location.pathname === link.path;
 
           return (
