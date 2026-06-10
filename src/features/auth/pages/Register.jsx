@@ -21,7 +21,7 @@ export default function Register() {
       <div className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md border border-gray-200">
         <Link
           to="/login"
-          className="block text-left text-gray-800 hover:underline mt-4"
+          className="inline-block mt-4 px-4 py-2 bg-[#0F4C8A] text-white font-medium rounded-md hover:bg-[#0D3E70] transition"
         >
           Voltar
         </Link>
@@ -103,7 +103,7 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700"
+            className="w-full bg-[#0F4C8A] text-white font-bold py-2 px-4 rounded hover:bg-[#0D3E70]"
           >
             Registrar
           </button>
