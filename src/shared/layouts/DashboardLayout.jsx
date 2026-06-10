@@ -1,0 +1,18 @@
+import { Outlet } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+
+export default function DashboardLayout({ sidebarLinks }) {
+  return (
+    <div className="flex h-screen bg-white">
+      {/* Reusable Sidebar receiving dynamic links */}
+      <Sidebar links={sidebarLinks} />
+      
+      {/* Main content area */}
+      <main className="flex-1 p-8 overflow-y-auto">
+        {/* The child route components will be injected here */}
+        <Outlet /> 
+      </main>
+    </div>
+  );
+}
+

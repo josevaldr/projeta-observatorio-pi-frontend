@@ -47,7 +47,7 @@ export default function Login() {
           </Button>
         </form>
         <Link
-          to="/register"
+          to="/cadastrar"
           className="w-full block border border-gray-300 text-center mt-3 bg-white text-blue-600 font-bold py-2 px-4 rounded hover:bg-blue-100"
         >
           Criar conta gratuita
