@@ -51,9 +51,8 @@ export function useLogin() {
       setEmail("");
       setPassword("");
 
-      setTimeout(() => {
-        navigate("/aluno");
-      }, 1500);
+      navigate("/aluno");
+      
     } catch (err) {
       setError(err.message || "Erro de conexão com o servidor.");
     } finally {

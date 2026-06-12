@@ -7,7 +7,7 @@ export default function Sidebar({ links }) {
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col">
       
-      <div className="p-6 flex justify-center border-b border-gray-200">
+      <div className="p-6 flex-col items-center justify-center border-b border-gray-200">
         <img
           src={logo}
           alt="PROjeta"
@@ -25,7 +25,7 @@ export default function Sidebar({ links }) {
               to={link.path}
               className={`block px-4 py-2 rounded-md font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-600 text-white"
+                  ? "bg-[#0F4C8A] text-white"
                   : "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
               }`}
             >

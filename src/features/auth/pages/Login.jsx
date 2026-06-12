@@ -41,11 +41,6 @@ export default function Login() {
             {error}
           </div>
         )}
-        {success && (
-          <div className="mb-4 text-center text-green-600 bg-green-100 p-2 rounded">
-            {success}
-          </div>
-        )}
 
         <form onSubmit={handleLogin} className="space-y-6">
           <InputField
