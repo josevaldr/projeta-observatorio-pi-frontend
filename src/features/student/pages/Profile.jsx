@@ -26,9 +26,11 @@ export default function Perfil() {
     setEditando(false); 
   };
 
-  // handler provisório sem integração
+  // handler de logout (sair)
   const handleSair = (e) => {
     e.preventDefault();
+    localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
     navigate("/login");
   };
 

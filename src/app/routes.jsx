@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import DashboardLayout from "../shared/layouts/DashboardLayout.jsx";
+import ProtectedRoute from "../shared/components/ProtectedRoute.jsx";
+import GuestRoute from "../shared/components/GuestRoute.jsx";
 
 // Auth pages
 import Login from "../features/auth/pages/Login.jsx";
@@ -28,15 +30,27 @@ export const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <GuestRoute>
+        <Login />
+      </GuestRoute>
+    ),
   },
   {
     path: "/cadastrar",
-    element: <Register />,
+    element: (
+      <GuestRoute>
+        <Register />
+      </GuestRoute>
+    ),
   },
   {
     path: "/aluno",
-    element: <DashboardLayout sidebarLinks={studentLinks} />,
+    element: (
+      <ProtectedRoute allowedRoles={["aluno"]}>
+        <DashboardLayout sidebarLinks={studentLinks} />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Feed /> },
       { path: "projetos", element: <Projects /> },
