@@ -8,8 +8,9 @@ export default function Perfil() {
 
   const [editando, setEditando] = useState(false);
 
-  const [nome, setNome] = useState("Maria Silva");
-  const [email, setEmail] = useState("maria.silva@email.com");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const [nome, setNome] = useState(user.nome_usuario || "Maria Silva");
+  const [email, setEmail] = useState(user.email || "maria.silva@email.com");
 
   // mock dados do aluno
   const [dadosFixos] = useState({

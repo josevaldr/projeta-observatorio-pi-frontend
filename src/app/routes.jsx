@@ -11,6 +11,7 @@ import Projects from "../features/student/pages/Projects.jsx";
 import Feed from "../features/student/pages/Feed.jsx";
 import Portfolio from "../features/student/pages/Portfolio.jsx";
 import Profile from "../features/student/pages/Profile.jsx";
+import PublicPortfolio from "../features/portfolio/pages/PublicPortfolio.jsx";
 
 const studentLinks = [
   { label: "Feed", path: "/aluno" },
@@ -42,5 +43,9 @@ export const router = createBrowserRouter([
       { path: "portfolio", element: <Portfolio /> },
       { path: "perfil", element: <Profile /> },
     ],
+  },
+  {
+    path: "/portfolio/:username",
+    element: <PublicPortfolio />,
   },
 ]);
