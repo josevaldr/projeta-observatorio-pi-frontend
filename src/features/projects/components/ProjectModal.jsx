@@ -1,3 +1,5 @@
+import EvaluationDisplay from "../../evaluation/components/EvaluationDisplay";
+
 export default function ProjectModal({ projetoSelecionado, onClose }) {
   if (!projetoSelecionado) return null;
 
@@ -68,6 +70,8 @@ export default function ProjectModal({ projetoSelecionado, onClose }) {
               </a>
             </div>
           )}
+
+          <EvaluationDisplay avaliacao={projetoSelecionado.avaliacao} />
         </div>
       </div>
     </div>
