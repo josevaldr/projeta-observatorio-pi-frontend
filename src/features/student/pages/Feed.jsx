@@ -1,6 +1,6 @@
 import { useState } from "react";
-import ProjectCard from "../../../components/projects/ProjectCard";
-import ProjectModal from "../../../components/projects/ProjectModal";
+import ProjectCard from "../../projects/components/ProjectCard";
+import ProjectModal from "../../projects/components/ProjectModal";
 
 const PROJETOS_MOCK = [
   {

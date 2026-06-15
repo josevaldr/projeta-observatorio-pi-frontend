@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import InputField from "../../../components/ui/InputField";
-import Button from "../../../components/ui/Button";
+import InputField from "../../../shared/components/InputField";
+import Button from "../../../shared/components/Button";
 
 export default function Perfil() {
   const navigate = useNavigate();
