@@ -1,6 +1,6 @@
 import { useState } from "react";
-import InputField from "../components/InputField";
-import Button from "../components/Button";
+import InputField from "../../../components/ui/InputField";
+import Button from "../../../components/ui/Button";
 import { Link } from "react-router-dom";
 import logo from "../../../assets/Frame 1.png";
 

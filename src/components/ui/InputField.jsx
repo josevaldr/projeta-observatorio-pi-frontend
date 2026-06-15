@@ -6,10 +6,12 @@ export default function InputField({
   placeholder,
   id,
   required,
+  className = "",
+  labelClassName = "",
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-gray-700 font-medium mb-2">
+      <label htmlFor={id} className={`block text-gray-700 font-medium mb-2 ${labelClassName}`}>
         {labelText}
       </label>
       <input
@@ -19,7 +21,7 @@ export default function InputField({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+        className={`w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-blue-600 text-sm ${className}`}
       />
     </div>
   );

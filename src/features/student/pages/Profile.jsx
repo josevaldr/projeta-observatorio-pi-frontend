@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import InputField from "../../../components/ui/InputField";
+import Button from "../../../components/ui/Button";
 
 export default function Perfil() {
   const navigate = useNavigate();
@@ -47,9 +49,12 @@ export default function Perfil() {
               </div>
 
               {/* Botão que ativa o modo de edição */}
-              <button
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth={false}
                 onClick={() => setEditando(true)}
-                className="flex items-center gap-2 bg-[#0F4C8A] hover:bg-[#0D3E70] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer"
+                className="gap-2 shadow-xs"
               >
                 <svg
                   className="w-4 h-4"
@@ -65,7 +70,7 @@ export default function Perfil() {
                   />
                 </svg>
                 Editar perfil
-              </button>
+              </Button>
             </header>
 
             {/* Card Principal */}
@@ -102,48 +107,42 @@ export default function Perfil() {
               className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs max-w-2xl mb-6 space-y-4"
             >
               {/* Campo Nome */}
-              <div>
-                <label className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-2">
-                  Nome Completo
-                </label>
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  className="w-full border border-gray-200 px-4 py-2.5 rounded-xl text-sm focus:outline-blue-600"
-                  required
-                />
-              </div>
+              <InputField
+                labelText="Nome Completo"
+                type="text"
+                id="nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                required={true}
+                labelClassName="!text-xs !font-semibold !text-gray-400 !uppercase !tracking-wider !mb-2"
+              />
 
               {/* Campo E-mail */}
-              <div>
-                <label className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-2">
-                  E-mail
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-200 px-4 py-2.5 rounded-xl text-sm focus:outline-blue-600"
-                  required
-                />
-              </div>
+              <InputField
+                labelText="E-mail"
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required={true}
+                labelClassName="!text-xs !font-semibold !text-gray-400 !uppercase !tracking-wider !mb-2"
+              />
 
               {/* Botões do Formulário */}
               <div className="flex gap-3 pt-2">
-                <button
+                <Button
                   type="submit"
-                  className="bg-[#0F4C8A] hover:bg-[#0D3E70] text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-all cursor-pointer"
-                >
-                  Salvar Alterações
-                </button>
-                <button
+                  text="Salvar Alterações"
+                  variant="primary"
+                  fullWidth={false}
+                />
+                <Button
                   type="button"
+                  text="Cancelar"
+                  variant="secondary"
+                  fullWidth={false}
                   onClick={() => setEditando(false)}
-                  className="border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-semibold px-5 py-2.5 rounded-xl transition-all cursor-pointer"
-                >
-                  Cancelar
-                </button>
+                />
               </div>
             </form>
           </>
@@ -187,12 +186,13 @@ export default function Perfil() {
 
         {/* 4. BOTÃO SAIR (Escondido temporariamente se estiver editando para limpar o visual) */}
         {!editando && (
-          <button
+          <Button
+            type="button"
+            text="Sair da conta"
+            variant="danger"
+            fullWidth={true}
             onClick={handleSair}
-            className="w-full border border-red-100 hover:bg-red-50 text-red-600 font-semibold text-xs py-3 rounded-xl transition-all text-center cursor-pointer"
-          >
-            Sair da conta
-          </button>
+          />
         )}
       </div>
     </div>
