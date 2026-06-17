@@ -20,6 +20,17 @@ import TeacherClasses from "../features/professor/pages/Classes.jsx";
 import TeacherProjects from "../features/professor/pages/Projects.jsx";
 import TeacherProfile from "../features/professor/pages/Profile.jsx";
 
+// Company pages
+import CompanyShowcase from "../features/company/pages/Showcase.jsx";
+import CompanyProfile from "../features/company/pages/Profile.jsx";
+
+// Admin pages
+import AdminDashboard from "../features/admin/pages/Dashboard.jsx";
+import AdminManagement from "../features/admin/pages/Management.jsx";
+import AdminMonitoring from "../features/admin/pages/Monitoring.jsx";
+import AdminCuration from "../features/admin/pages/Curation.jsx";
+import AdminProfile from "../features/admin/pages/Profile.jsx";
+
 const studentLinks = [
   { label: "Feed", path: "/aluno" },
   { label: "Projetos", path: "/aluno/projetos" },
@@ -31,6 +42,19 @@ const professorLinks = [
   { label: "Turmas", path: "/professor" },
   { label: "Projetos", path: "/professor/projetos" },
   { label: "Perfil", path: "/professor/perfil" },
+];
+
+const companyLinks = [
+  { label: "Vitrine", path: "/empresa" },
+  { label: "Perfil", path: "/empresa/perfil" },
+];
+
+const adminLinks = [
+  { label: "Painel", path: "/admin" },
+  { label: "Cadastros", path: "/admin/cadastros" },
+  { label: "Acompanhamento", path: "/admin/acompanhamento" },
+  { label: "Curadoria", path: "/admin/curadoria" },
+  { label: "Perfil", path: "/admin/perfil" },
 ];
 
 // Define and export the router
@@ -80,6 +104,33 @@ export const router = createBrowserRouter([
       { index: true, element: <TeacherClasses /> },
       { path: "projetos", element: <TeacherProjects /> },
       { path: "perfil", element: <TeacherProfile /> },
+    ],
+  },
+  {
+    path: "/empresa",
+    element: (
+      <ProtectedRoute allowedRoles={["empresa"]}>
+        <DashboardLayout sidebarLinks={companyLinks} />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <CompanyShowcase /> },
+      { path: "perfil", element: <CompanyProfile /> },
+    ],
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute allowedRoles={["coordenacao", "coordenador", "admin"]}>
+        <DashboardLayout sidebarLinks={adminLinks} />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <AdminDashboard /> },
+      { path: "cadastros", element: <AdminManagement /> },
+      { path: "acompanhamento", element: <AdminMonitoring /> },
+      { path: "curadoria", element: <AdminCuration /> },
+      { path: "perfil", element: <AdminProfile /> },
     ],
   },
   {

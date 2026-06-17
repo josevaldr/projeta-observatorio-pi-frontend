@@ -51,7 +51,15 @@ export function useLogin() {
       setEmail("");
       setPassword("");
 
-      navigate("/aluno");
+      if (data.tipo_usuario === "professor") {
+        navigate("/professor");
+      } else if (data.tipo_usuario === "empresa") {
+        navigate("/empresa");
+      } else if (data.tipo_usuario === "admin" || data.tipo_usuario === "coordenacao" || data.tipo_usuario === "coordenador") {
+        navigate("/admin");
+      } else {
+        navigate("/aluno");
+      }
       
     } catch (err) {
       setError(err.message || "Erro de conexão com o servidor.");

@@ -14,11 +14,16 @@ export default function GuestRoute({ children }) {
         case "professor":
           return <Navigate to="/professor" replace />;
         case "admin":
+        case "coordenacao":
+        case "coordenador":
           return <Navigate to="/admin" replace />;
         case "empresa":
           return <Navigate to="/empresa" replace />;
         default:
-          return <Navigate to="/aluno" replace />;
+          // Se for um cargo desconhecido, limpa e deixa logar de novo
+          localStorage.removeItem("user");
+          localStorage.removeItem("authToken");
+          return children;
       }
     } catch (error) {
       // Se der erro ao ler o JSON, o dado pode estar corrompido.
