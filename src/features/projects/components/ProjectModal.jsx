@@ -71,6 +71,21 @@ export default function ProjectModal({ projetoSelecionado, onClose }) {
             </div>
           )}
 
+          {projetoSelecionado.contatos && projetoSelecionado.contatos.length > 0 && (
+            <div className="mb-6 bg-indigo-50 border border-indigo-100 p-6 rounded-xl">
+              <h3 className="text-lg font-semibold text-indigo-900 mb-2">Interesse Corporativo</h3>
+              <p className="text-sm text-indigo-700 mb-4">
+                Esta equipe autorizou o contato de empresas. Clique abaixo para enviar um e-mail para os integrantes.
+              </p>
+              <a 
+                href={`mailto:${projetoSelecionado.contatos.join(',')}?subject=Oportunidade - Projeto Integrador: ${projetoSelecionado.titulo}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+              >
+                ✉️ Entrar em Contato com a Equipe
+              </a>
+            </div>
+          )}
+
           <EvaluationDisplay avaliacao={projetoSelecionado.avaliacao} />
         </div>
       </div>
