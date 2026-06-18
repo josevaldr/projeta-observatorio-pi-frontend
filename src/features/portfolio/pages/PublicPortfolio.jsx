@@ -13,38 +13,46 @@ const THEME_MAP = {
 export default function PublicPortfolio() {
   const { username } = useParams();
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    // Busca dados simulados do localStorage
-    const saved = localStorage.getItem(`portfolio_${username}`);
-    if (saved) {
-      setData(JSON.parse(saved));
-    } else {
-      // Mock de fallback se o usuário visitar sem ter salvo antes
-      setData({
-        bio: "Estudante e desenvolvedor em evolução. Apaixonado por transformar ideias complexas em interfaces simples e intuitivas.",
-        habilidades: "React, Design de Interfaces, Gestão de Projetos, Python",
-        linkedin: "#",
-        github: "#",
-        tema: "blue",
-        projetos: [
-          {
-            id: 1,
-            titulo: "Sensor IoT para hortas urbanas",
-            disciplina: "PI III",
-            ano: "2026.1",
-            publicado: true,
-          }
-        ]
+    setLoading(true);
+    fetch(`http://127.0.0.1:8000/alunos/publico/${username}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Portfólio não encontrado");
+        return res.json();
+      })
+      .then(apiData => {
+        setData(apiData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setError(true);
+        setLoading(false);
       });
-    }
   }, [username]);
 
-  if (!data) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-400">Carregando...</div>;
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-400">Carregando portfólio...</div>;
+  }
 
-  const themeColors = THEME_MAP[data.tema] || THEME_MAP["blue"];
-  const publicProjects = data.projetos.filter(p => p.publicado);
-  const skillsArray = data.habilidades.split(",").map(s => s.trim()).filter(s => s.length > 0);
+  if (error || !data) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-800">
+        <h1 className="text-3xl font-bold mb-2">Ops! 😕</h1>
+        <p className="text-gray-500 mb-6">Não conseguimos encontrar o portfólio de <strong>{username}</strong>.</p>
+        <Link to="/login" className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition">
+          Voltar à Plataforma
+        </Link>
+      </div>
+    );
+  }
+
+  const { usuario, perfil, projetos } = data;
+  const themeColors = THEME_MAP[perfil.tema] || THEME_MAP["blue"];
+  const skillsArray = perfil.habilidades ? perfil.habilidades.split(",").map(s => s.trim()).filter(s => s.length > 0) : [];
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-black selection:text-white pb-20">
@@ -70,31 +78,34 @@ export default function PublicPortfolio() {
           
           {/* Avatar Generativo/Simples */}
           <div className={`w-32 h-32 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-4xl font-black text-white shrink-0 ${themeColors.bg}`}>
-            {username.substring(0, 2).toUpperCase()}
+            {usuario.nome_usuario.substring(0, 2).toUpperCase()}
           </div>
 
           <div className="flex-1 text-center md:text-left pt-2">
             <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight capitalize mb-2">
-              {username.replace("-", " ")}
+              {usuario.nome_usuario}
             </h1>
             <p className="text-slate-500 font-medium mb-6 leading-relaxed max-w-2xl">
-              {data.bio}
+              {perfil.bio || "Sem biografia cadastrada."}
             </p>
 
             {/* Links Sociais */}
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
-              {data.linkedin && (
-                <a href={data.linkedin} target="_blank" rel="noreferrer" className={`px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-sm hover:shadow-md ${themeColors.bgLight} ${themeColors.text} hover:opacity-80`}>
+              {perfil.linkedin && (
+                <a href={perfil.linkedin.startsWith('http') ? perfil.linkedin : `https://${perfil.linkedin}`} target="_blank" rel="noreferrer" className={`px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-sm hover:shadow-md ${themeColors.bgLight} ${themeColors.text} hover:opacity-80`}>
                   LinkedIn
                 </a>
               )}
-              {data.github && (
-                <a href={data.github} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-full text-sm font-semibold bg-slate-900 text-white transition-all shadow-sm hover:shadow-md hover:opacity-80">
+              {perfil.github && (
+                <a href={perfil.github.startsWith('http') ? perfil.github : `https://${perfil.github}`} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-full text-sm font-semibold bg-slate-900 text-white transition-all shadow-sm hover:shadow-md hover:opacity-80">
                   GitHub
                 </a>
               )}
-              <a href={`mailto:${username}@example.com`} className="px-4 py-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-700 transition-all shadow-sm hover:shadow-md hover:bg-slate-50">
-                Contato
+              <a href={`mailto:${usuario.email}`} className="px-4 py-2 flex items-center gap-2 rounded-full text-sm font-semibold bg-white border border-slate-200 text-slate-700 transition-all shadow-sm hover:shadow-md hover:bg-slate-50">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-slate-400">
+                  <path d="M3 4a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2H3zm0 1.068L9.61 9.382a1 1 0 00.78 0L17 5.068V14a1 1 0 01-1 1H4a1 1 0 01-1-1V5.068z" />
+                </svg>
+                Enviar E-mail
               </a>
             </div>
           </div>
@@ -121,38 +132,41 @@ export default function PublicPortfolio() {
 
           {/* Coluna Principal */}
           <div className="lg:col-span-2">
-            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Projetos em Destaque</h2>
+            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Projetos Recentes</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {publicProjects.length > 0 ? (
-                publicProjects.map((projeto) => (
-                  <div key={projeto.id} className="group bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer">
+              {projetos && projetos.length > 0 ? (
+                projetos.map((projeto) => (
+                  <a href={projeto.link_projeto || "#"} target={projeto.link_projeto ? "_blank" : "_self"} rel="noreferrer" key={projeto.id} className="group bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer block">
                     
                     {/* Imagem/Capa do Projeto */}
                     <div className={`w-full h-32 rounded-xl mb-4 ${themeColors.bg} opacity-80 group-hover:opacity-100 transition-opacity flex items-center justify-center relative overflow-hidden`}>
                       <span className="text-white/30 font-black text-4xl rotate-12 group-hover:rotate-0 group-hover:scale-110 transition-all duration-500">
-                        {projeto.disciplina.substring(0, 3).toUpperCase()}
+                        {projeto.disciplina ? projeto.disciplina.substring(0, 3).toUpperCase() : "PROJ"}
                       </span>
                     </div>
 
                     <div>
-                      <h3 className={`font-bold text-slate-900 mb-1 group-hover:${themeColors.text} transition-colors`}>
+                      <h3 className={`font-bold text-slate-900 mb-1 group-hover:${themeColors.text} transition-colors line-clamp-1`}>
                         {projeto.titulo}
                       </h3>
-                      <div className="flex items-center gap-2 mt-3">
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-3">
+                        {projeto.disciplina || "Sem descrição"}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-auto">
                         <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider ${themeColors.bgLight} ${themeColors.text}`}>
-                          {projeto.disciplina}
+                          {projeto.nome_equipe || "Equipe"}
                         </span>
                         <span className="text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider bg-slate-100 text-slate-500">
-                          {projeto.ano}
+                          {projeto.ano ? new Date(projeto.ano).getFullYear() : "-"}
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </a>
                 ))
               ) : (
                 <div className="col-span-full py-10 text-center bg-white rounded-3xl border border-slate-100 border-dashed">
-                  <p className="text-slate-400">Nenhum projeto selecionado para o portfólio.</p>
+                  <p className="text-slate-400">Este aluno ainda não participou de nenhum projeto.</p>
                 </div>
               )}
             </div>

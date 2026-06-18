@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import InputField from "../../../shared/components/InputField";
 import Button from "../../../shared/components/Button";
@@ -7,23 +7,71 @@ export default function Perfil() {
   const navigate = useNavigate();
 
   const [editando, setEditando] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const [nome, setNome] = useState(user.nome_usuario || "Maria Silva");
-  const [email, setEmail] = useState(user.email || "maria.silva@email.com");
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user") || "{}"));
+  
+  const userId = user.id_usuario || user.id || 0;
 
-  // mock dados do aluno
-  const [dadosFixos] = useState({
-    tipo_usuario: "aluno",
-    matricula: 23232277,
-    curso: "Análise e Desenvolvimento de Sistemas",
-    turma: "TADS25.103",
+  const [nome, setNome] = useState(user.nome_usuario || user.nome || "");
+  const [email, setEmail] = useState(user.email || "");
+
+  // dados do aluno que vêm da API
+  const [alunoData, setAlunoData] = useState({
+    matricula: "",
+    curso: "",
+    turma: "",
   });
 
-  // handler provisório sem integração
-  const handleSalvar = (e) => {
+  useEffect(() => {
+    if (userId) {
+      fetch(`http://127.0.0.1:8000/alunos/${userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.aluno) {
+            setAlunoData({
+              matricula: data.aluno.matricula || "",
+              curso: data.aluno.curso || "",
+              turma: data.aluno.turma || "",
+            });
+          }
+        })
+        .catch(err => console.error("Erro ao buscar dados do aluno:", err));
+    }
+  }, [userId]);
+
+  const handleSalvar = async (e) => {
     e.preventDefault();
-    setEditando(false); 
+    setLoading(true);
+    try {
+      const payload = {
+        nome_usuario: nome,
+        email: email,
+        senha: "not_updated", // dummy para passar na validação do backend (o back não atualiza senha nessa rota)
+        tipo_usuario: user.tipo_usuario || "aluno"
+      };
+
+      const response = await fetch(`http://127.0.0.1:8000/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const updatedUser = { ...user, nome_usuario: nome, nome: nome, email: email };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        setEditando(false);
+        alert("Perfil atualizado com sucesso!");
+      } else {
+        alert("Erro ao atualizar o perfil. Verifique os dados.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro na comunicação com o servidor.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // handler de logout (sair)
@@ -47,7 +95,7 @@ export default function Perfil() {
                   Perfil
                 </h1>
                 <p className="text-xs text-gray-400 capitalize">
-                  {dadosFixos.tipo_usuario}
+                  {user.tipo_usuario || "aluno"}
                 </p>
               </div>
 
@@ -135,9 +183,10 @@ export default function Perfil() {
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
-                  text="Salvar Alterações"
+                  text={loading ? "Salvando..." : "Salvar Alterações"}
                   variant="primary"
                   fullWidth={false}
+                  disabled={loading}
                 />
                 <Button
                   type="button"
@@ -158,7 +207,7 @@ export default function Perfil() {
               Curso
             </span>
             <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.curso}
+              {alunoData.curso || "-"}
             </span>
           </div>
           <div>
@@ -166,7 +215,7 @@ export default function Perfil() {
               Turma
             </span>
             <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.turma}
+              {alunoData.turma || "-"}
             </span>
           </div>
           <div>
@@ -174,7 +223,7 @@ export default function Perfil() {
               Matrícula
             </span>
             <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.matricula}
+              {alunoData.matricula || "-"}
             </span>
           </div>
           <div>
@@ -182,7 +231,7 @@ export default function Perfil() {
               Tipo de Conta
             </span>
             <span className="text-sm font-bold text-gray-900 capitalize">
-              {dadosFixos.tipo_usuario}
+              {user.tipo_usuario || "aluno"}
             </span>
           </div>
         </div>

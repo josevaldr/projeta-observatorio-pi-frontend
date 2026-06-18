@@ -41,7 +41,9 @@ export default function ProjetosAluno() {
       const response = await fetch("http://127.0.0.1:8000/projetos/");
       if (response.ok) {
         const data = await response.json();
-        setMeusProjetos(data);
+        // Filtra para exibir apenas os projetos que contêm o id do usuário atual na equipe
+        const meus = data.filter(p => p.equipe && p.equipe.id_alunos && p.equipe.id_alunos.includes(userId));
+        setMeusProjetos(meus);
       }
     } catch (err) {
       console.error("Erro ao buscar projetos:", err);
