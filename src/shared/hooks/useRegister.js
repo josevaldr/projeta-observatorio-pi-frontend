@@ -7,6 +7,21 @@ export function useRegister() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Tipo de usuário
+  const [userType, setUserType] = useState("aluno");
+
+  // Campos de Aluno
+  const [matricula, setMatricula] = useState("");
+  const [curso, setCurso] = useState("");
+  const [turma, setTurma] = useState("");
+
+  // Campos de Professor
+  const [especialidade, setEspecialidade] = useState("");
+
+  // Campos de Empresa
+  const [telefone, setTelefone] = useState("");
+  const [cnpj, setCnpj] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -26,17 +41,42 @@ export function useRegister() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/users/", {
+      let endpoint = "";
+      let payload = {
+        nome_usuario: name,
+        email: email,
+        senha: password,
+      };
+
+      if (userType === "aluno") {
+        endpoint = "http://127.0.0.1:8000/alunos/completo";
+        payload = {
+          ...payload,
+          matricula: parseInt(matricula) || 0,
+          curso: curso,
+          turma: turma,
+        };
+      } else if (userType === "professor") {
+        endpoint = "http://127.0.0.1:8000/professores/completo";
+        payload = {
+          ...payload,
+          especialidade: especialidade,
+        };
+      } else if (userType === "empresa") {
+        endpoint = "http://127.0.0.1:8000/empresas/completo";
+        payload = {
+          ...payload,
+          telefone: telefone,
+          cnpj: cnpj,
+        };
+      }
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          nome_usuario: name,
-          email: email,
-          senha: password,
-          tipo_usuario: "aluno",
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -60,6 +100,12 @@ export function useRegister() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
+      setMatricula("");
+      setCurso("");
+      setTurma("");
+      setEspecialidade("");
+      setTelefone("");
+      setCnpj("");
 
       setTimeout(() => {
         navigate("/login");
@@ -71,16 +117,18 @@ export function useRegister() {
     }
   };
 
-  // Retornamos tudo o que o componente visual vai precisar acessar
   return {
-    name,
-    setName,
-    email,
-    setEmail,
-    password,
-    setPassword,
-    confirmPassword,
-    setConfirmPassword,
+    name, setName,
+    email, setEmail,
+    password, setPassword,
+    confirmPassword, setConfirmPassword,
+    userType, setUserType,
+    matricula, setMatricula,
+    curso, setCurso,
+    turma, setTurma,
+    especialidade, setEspecialidade,
+    telefone, setTelefone,
+    cnpj, setCnpj,
     loading,
     error,
     success,
