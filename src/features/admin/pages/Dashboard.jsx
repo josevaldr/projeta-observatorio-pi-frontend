@@ -1,13 +1,70 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
-  // Mock Metrics Data
-  const metrics = {
-    totalClasses: 12,
-    totalTeachers: 8,
-    projectsSubmitted: 45,
-    pendingEvaluations: 12,
-    activeDeadlines: 3,
+  const [metrics, setMetrics] = useState({
+    totalClasses: 0,
+    totalTeachers: 0,
+    projectsSubmitted: 0,
+    pendingEvaluations: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // 1. Fetch Turmas (baseado nos alunos)
+      let uniqueClasses = new Set();
+      const alunosRes = await fetch("http://127.0.0.1:8000/alunos/");
+      if (alunosRes.ok) {
+        const alunosData = await alunosRes.json();
+        const listaAlunos = alunosData.alunos || [];
+        listaAlunos.forEach(a => {
+          if (a.turma) uniqueClasses.add(a.turma);
+        });
+      }
+
+      // 2. Fetch Professores
+      let teachersCount = 0;
+      const profsRes = await fetch("http://127.0.0.1:8000/professores/");
+      if (profsRes.ok) {
+        const profsData = await profsRes.json();
+        const listProfs = Array.isArray(profsData) ? profsData : (profsData.professores || []);
+        teachersCount = listProfs.length;
+      }
+
+      // 3. Fetch Projetos (Submetidos e Pendentes de Avaliação)
+      let projectsCount = 0;
+      let pendingCount = 0;
+      const projRes = await fetch("http://127.0.0.1:8000/projetos/");
+      if (projRes.ok) {
+        const resData = await projRes.json();
+        const projetos = Array.isArray(resData) ? resData : (resData.value || []);
+        projectsCount = projetos.length;
+        
+        pendingCount = projetos.filter(p => {
+          const status = String(p.status_projeto || "").toLowerCase();
+          return status === "pendente" || !p.cod_id_avaliacao;
+        }).length;
+      }
+
+      setMetrics({
+        totalClasses: uniqueClasses.size,
+        totalTeachers: teachersCount,
+        projectsSubmitted: projectsCount,
+        pendingEvaluations: pendingCount,
+      });
+
+    } catch (err) {
+      console.error("Erro ao carregar dados do dashboard:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -20,82 +77,74 @@ export default function Dashboard() {
       </header>
 
       {/* METRICS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              Turmas Ativas
-            </p>
-            <h3 className="text-3xl font-black text-gray-900">
-              {metrics.totalClasses}
-            </h3>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
-            🏫
-          </div>
+      {loading ? (
+        <div className="text-center py-20 text-gray-500">
+          Carregando métricas...
         </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Turmas Ativas
+              </p>
+              <h3 className="text-3xl font-black text-gray-900">
+                {metrics.totalClasses}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+              🏫
+            </div>
+          </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              Professores Focais
-            </p>
-            <h3 className="text-3xl font-black text-gray-900">
-              {metrics.totalTeachers}
-            </h3>
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Professores Focais
+              </p>
+              <h3 className="text-3xl font-black text-gray-900">
+                {metrics.totalTeachers}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+              👨‍🏫
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
-            👨‍🏫
-          </div>
-        </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              Projetos Submetidos
-            </p>
-            <h3 className="text-3xl font-black text-gray-900">
-              {metrics.projectsSubmitted}
-            </h3>
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Projetos Submetidos
+              </p>
+              <h3 className="text-3xl font-black text-gray-900">
+                {metrics.projectsSubmitted}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+              🚀
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
-            🚀
-          </div>
-        </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              Avaliações Pendentes
-            </p>
-            <h3 className="text-3xl font-black text-amber-600">
-              {metrics.pendingEvaluations}
-            </h3>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
-            ⏳
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              Prazos Ativos
-            </p>
-            <h3 className="text-3xl font-black text-gray-900">
-              {metrics.activeDeadlines}
-            </h3>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
-            📅
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Avaliações Pendentes
+              </p>
+              <h3 className="text-3xl font-black text-amber-600">
+                {metrics.pendingEvaluations}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+              ⏳
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* QUICK ACTIONS */}
       <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
         <h2 className="text-lg font-bold text-gray-900 mb-6">Acesso Rápido</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
           <Link
             to="/admin/cadastros"
             className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all text-gray-700 font-medium"
@@ -107,12 +156,6 @@ export default function Dashboard() {
             className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all text-gray-700 font-medium"
           >
             <span className="text-2xl">📊</span> Monitorar Entregas
-          </Link>
-          <Link
-            to="/admin/curadoria"
-            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all text-gray-700 font-medium"
-          >
-            <span className="text-2xl">💎</span> Curadoria de Projetos
           </Link>
         </div>
       </div>

@@ -1,194 +1,442 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "../../../shared/components/Button";
 import InputField from "../../../shared/components/InputField";
 
-// Mock Data
-const MOCK_CLASSES = [
-  { id: 1, name: "TADS25.103", course: "Análise e Desenvolvimento de Sistemas", period: "Noturno", teacher: "Prof. Marcos", activeProjects: 5 },
-  { id: 2, name: "TSI24.201", course: "Sistemas para Internet", period: "Matutino", teacher: "Prof. Marcos", activeProjects: 2 },
-  { id: 3, name: "REDES25.101", course: "Redes de Computadores", period: "Noturno", teacher: "Profa. Ana", activeProjects: 0 },
-];
-
-const MOCK_TEACHERS = [
-  { id: 101, name: "Prof. Marcos", email: "marcos@senac.br", linkedClasses: 2 },
-  { id: 102, name: "Profa. Ana", email: "ana@senac.br", linkedClasses: 1 },
-  { id: 103, name: "Prof. Carlos", email: "carlos@senac.br", linkedClasses: 0 },
-];
-
 export default function Management() {
-  const [activeTab, setActiveTab] = useState("classes"); // 'classes' | 'teachers'
+  const [activeTab, setActiveTab] = useState("students"); // 'students' | 'teachers'
 
-  const [classes, setClasses] = useState(MOCK_CLASSES);
-  const [teachers, setTeachers] = useState(MOCK_TEACHERS);
-
-  // States for New Class
-  const [newClassName, setNewClassName] = useState("");
-  const [newClassCourse, setNewClassCourse] = useState("");
-  const [newClassTeacher, setNewClassTeacher] = useState("");
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // States for New Teacher
   const [newTeacherName, setNewTeacherName] = useState("");
   const [newTeacherEmail, setNewTeacherEmail] = useState("");
+  const [newTeacherPassword, setNewTeacherPassword] = useState("");
+  const [newTeacherSpecialty, setNewTeacherSpecialty] = useState("");
+
+  // States for New Student
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentPassword, setNewStudentPassword] = useState("");
+  const [newStudentRegistration, setNewStudentRegistration] = useState("");
+  const [newStudentCourse, setNewStudentCourse] = useState("");
+  const [newStudentClass, setNewStudentClass] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch Alunos
+      const alunosRes = await fetch("http://127.0.0.1:8000/alunos/");
+      if (alunosRes.ok) {
+        const alunosData = await alunosRes.json();
+        const listaAlunos = alunosData.alunos || [];
+        
+        const mappedStudents = listaAlunos.map(a => ({
+          id: a.id_aluno,
+          name: a.nome_usuario || a.usuario?.nome_usuario || `Aluno #${a.id_aluno}`,
+          email: a.usuario?.email || "Sem e-mail",
+          registration: a.matricula || "-",
+          course: a.curso || "Não Informado",
+          turma: a.turma || "Indefinida"
+        }));
+        setStudents(mappedStudents);
+      }
+
+      // 2. Fetch Professores
+      const profsRes = await fetch("http://127.0.0.1:8000/professores/");
+      if (profsRes.ok) {
+        const profsData = await profsRes.json();
+        const listProfs = Array.isArray(profsData) ? profsData : (profsData.professores || []);
+        
+        const mappedTeachers = listProfs.map(p => ({
+          id: p.id_professor || p.usuario?.id_usuario,
+          name: p.usuario?.nome_usuario || p.nome_usuario || `Prof #${p.id_professor}`,
+          email: p.usuario?.email || p.email || "Sem e-mail",
+          specialty: p.especialidade || "Geral"
+        }));
+        setTeachers(mappedTeachers);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar cadastros:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // --- ACTIONS ---
-  const handleRemoveClass = (cls) => {
-    if (cls.activeProjects > 0) {
-      alert(`⚠️ Bloqueio: A turma ${cls.name} não pode ser removida pois possui ${cls.activeProjects} projetos vinculados ativamente.`);
-      return;
-    }
-    if (window.confirm(`Tem certeza que deseja remover a turma ${cls.name}?`)) {
-      setClasses(classes.filter((c) => c.id !== cls.id));
-    }
-  };
-
-  const handleAddClass = (e) => {
+  const handleAddTeacher = async (e) => {
     e.preventDefault();
-    const newClass = {
-      id: Date.now(),
-      name: newClassName,
-      course: newClassCourse,
-      period: "A Definir",
-      teacher: newClassTeacher || "Sem Professor",
-      activeProjects: 0,
-    };
-    setClasses([...classes, newClass]);
-    setNewClassName("");
-    setNewClassCourse("");
-    setNewClassTeacher("");
+    if (!newTeacherName || !newTeacherEmail || !newTeacherPassword || !newTeacherSpecialty) {
+       alert("Preencha todos os campos obrigatórios para o professor.");
+       return;
+    }
+    setSubmitting(true);
+    try {
+      const payload = {
+        nome_usuario: newTeacherName,
+        email: newTeacherEmail,
+        senha: newTeacherPassword,
+        especialidade: newTeacherSpecialty
+      };
+
+      const res = await fetch("http://127.0.0.1:8000/professores/completo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert("Professor cadastrado com sucesso!");
+        setNewTeacherName("");
+        setNewTeacherEmail("");
+        setNewTeacherPassword("");
+        setNewTeacherSpecialty("");
+        fetchData();
+      } else {
+        alert("Erro ao cadastrar professor.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro de comunicação.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleRemoveTeacher = (teacher) => {
-    if (teacher.linkedClasses > 0) {
-      alert(`⚠️ Bloqueio: Não é possível remover o professor(a) ${teacher.name} pois ele possui ${teacher.linkedClasses} turmas vinculadas que ficariam sem professor focal.`);
-      return;
-    }
-    if (window.confirm(`Tem certeza que deseja remover o professor(a) ${teacher.name}?`)) {
-      setTeachers(teachers.filter((t) => t.id !== teacher.id));
-    }
-  };
-
-  const handleAddTeacher = (e) => {
+  const handleAddStudent = async (e) => {
     e.preventDefault();
-    const newTeacher = {
-      id: Date.now(),
-      name: newTeacherName,
-      email: newTeacherEmail,
-      linkedClasses: 0,
-    };
-    setTeachers([...teachers, newTeacher]);
-    setNewTeacherName("");
-    setNewTeacherEmail("");
+    if (!newStudentName || !newStudentEmail || !newStudentPassword || !newStudentRegistration || !newStudentCourse || !newStudentClass) {
+       alert("Preencha todos os campos obrigatórios para o aluno.");
+       return;
+    }
+    setSubmitting(true);
+    try {
+      const payload = {
+        nome_usuario: newStudentName,
+        email: newStudentEmail,
+        senha: newStudentPassword,
+        matricula: parseInt(newStudentRegistration, 10),
+        curso: newStudentCourse,
+        turma: newStudentClass
+      };
+
+      const res = await fetch("http://127.0.0.1:8000/alunos/completo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert("Aluno cadastrado com sucesso!");
+        setNewStudentName("");
+        setNewStudentEmail("");
+        setNewStudentPassword("");
+        setNewStudentRegistration("");
+        setNewStudentCourse("");
+        setNewStudentClass("");
+        fetchData();
+      } else {
+        alert("Erro ao cadastrar aluno.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro de comunicação.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRemoveUser = async (user, type) => {
+    if (window.confirm(`Tem certeza que deseja remover o(a) ${type} ${user.name}?`)) {
+       alert(`Solicitação para remover ${user.name} enviada (Mock)`);
+    }
   };
 
   return (
     <div className="flex-1 bg-gray-50 min-h-screen p-8 text-gray-800">
-      <header className="mb-6 border-b border-gray-200 pb-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestão e Cadastros</h1>
-        <p className="text-gray-500">
-          Gerencie o catálogo de turmas e o corpo docente responsável pelos Projetos Integradores.
-        </p>
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Gerenciar Cadastros</h1>
+        <p className="text-gray-500">Administre os alunos e professores vinculados ao PROjeta.</p>
       </header>
 
-      {/* TABS NAVIGATION */}
-      <div className="flex gap-4 mb-8">
+      {/* TABS */}
+      <div className="flex border-b border-gray-200 mb-8">
         <button
-          onClick={() => setActiveTab("classes")}
-          className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-colors ${
-            activeTab === "classes"
-              ? "bg-blue-600 text-white shadow-md"
-              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+          onClick={() => setActiveTab("students")}
+          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+            activeTab === "students" ? "text-blue-600" : "text-gray-500 hover:text-gray-800"
           }`}
         >
-          🎓 Turmas e Períodos
+          Alunos
+          {activeTab === "students" && (
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-t-md"></span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab("teachers")}
-          className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-colors ${
-            activeTab === "teachers"
-              ? "bg-blue-600 text-white shadow-md"
-              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+            activeTab === "teachers" ? "text-blue-600" : "text-gray-500 hover:text-gray-800"
           }`}
         >
-          👨‍🏫 Professores Focais
+          Professores Focais
+          {activeTab === "teachers" && (
+            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-t-md"></span>
+          )}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* LIST SECTION */}
-        <div className="xl:col-span-2">
-          {activeTab === "classes" ? (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Turmas Ativas ({classes.length})</h2>
-              {classes.map((cls) => (
-                <div key={cls.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{cls.name} <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full ml-2">{cls.period}</span></h3>
-                    <p className="text-sm text-gray-600 mb-2">{cls.course}</p>
-                    <div className="flex gap-4 text-xs font-medium text-gray-500">
-                      <span className="flex items-center gap-1">👨‍🏫 {cls.teacher}</span>
-                      <span className="flex items-center gap-1">📂 {cls.activeProjects} Projetos</span>
-                    </div>
+      {loading ? (
+        <div className="text-center py-20 text-gray-500">Carregando cadastros...</div>
+      ) : (
+        <>
+          {/* TAB: STUDENTS */}
+          {activeTab === "students" && (
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              
+              {/* LISTA DE ALUNOS */}
+              <div className="xl:col-span-2 space-y-6">
+                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-900">Alunos Cadastrados</h2>
+                    <p className="text-sm text-gray-500">Lista geral de alunos com acesso ao sistema.</p>
                   </div>
-                  <Button type="button" variant="danger" fullWidth={false} className="!py-1.5 !px-4 text-xs shrink-0" onClick={() => handleRemoveClass(cls)}>
-                    Remover
-                  </Button>
-                </div>
-              ))}
-              {classes.length === 0 && <p className="text-gray-500 italic">Nenhuma turma cadastrada.</p>}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Corpo Docente ({teachers.length})</h2>
-              {teachers.map((teacher) => (
-                <div key={teacher.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{teacher.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{teacher.email}</p>
-                    <div className="flex gap-4 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md inline-block">
-                      🎓 Vinculado a {teacher.linkedClasses} turmas
-                    </div>
+                  <div className="overflow-x-auto max-h-[600px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="sticky top-0 bg-gray-50/95 backdrop-blur z-10">
+                        <tr className="text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-100">
+                          <th className="px-6 py-4">Nome / Matrícula</th>
+                          <th className="px-6 py-4">Turma / Curso</th>
+                          <th className="px-6 py-4 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {students.map((student) => (
+                          <tr key={student.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <p className="font-medium text-gray-900">{student.name}</p>
+                              <p className="text-xs text-gray-500">Matrícula: {student.registration}</p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="font-medium text-gray-900">{student.turma}</p>
+                              <p className="text-xs text-gray-500">{student.course}</p>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleRemoveUser(student, "aluno")}
+                                className="text-red-500 hover:text-red-700 font-medium text-sm transition-colors"
+                              >
+                                Remover
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <Button type="button" variant="danger" fullWidth={false} className="!py-1.5 !px-4 text-xs shrink-0" onClick={() => handleRemoveTeacher(teacher)}>
-                    Remover
-                  </Button>
                 </div>
-              ))}
-              {teachers.length === 0 && <p className="text-gray-500 italic">Nenhum professor cadastrado.</p>}
+              </div>
+
+              {/* FORMULARIO NOVO ALUNO */}
+              <div className="xl:col-span-1">
+                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm sticky top-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-2">Cadastrar Aluno</h2>
+                  <p className="text-sm text-gray-500 mb-6">Insira um novo aluno na plataforma.</p>
+
+                  <form onSubmit={handleAddStudent} className="space-y-4">
+                    <InputField
+                      labelText="Nome Completo"
+                      type="text"
+                      id="newStudentName"
+                      value={newStudentName}
+                      onChange={(e) => setNewStudentName(e.target.value)}
+                      required={true}
+                      placeholder="Ex: João Souza"
+                      labelClassName="!text-xs"
+                    />
+
+                    <InputField
+                      labelText="E-mail"
+                      type="email"
+                      id="newStudentEmail"
+                      value={newStudentEmail}
+                      onChange={(e) => setNewStudentEmail(e.target.value)}
+                      required={true}
+                      placeholder="Ex: joao@aluno.senac.br"
+                      labelClassName="!text-xs"
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <InputField
+                        labelText="Senha de Acesso"
+                        type="password"
+                        id="newStudentPassword"
+                        value={newStudentPassword}
+                        onChange={(e) => setNewStudentPassword(e.target.value)}
+                        required={true}
+                        placeholder="Mínimo 6"
+                        labelClassName="!text-xs"
+                      />
+                      <InputField
+                        labelText="Matrícula"
+                        type="number"
+                        id="newStudentRegistration"
+                        value={newStudentRegistration}
+                        onChange={(e) => setNewStudentRegistration(e.target.value)}
+                        required={true}
+                        placeholder="Ex: 12345"
+                        labelClassName="!text-xs"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <InputField
+                        labelText="Curso"
+                        type="text"
+                        id="newStudentCourse"
+                        value={newStudentCourse}
+                        onChange={(e) => setNewStudentCourse(e.target.value)}
+                        required={true}
+                        placeholder="Ex: TADS"
+                        labelClassName="!text-xs"
+                      />
+                      <InputField
+                        labelText="Turma"
+                        type="text"
+                        id="newStudentClass"
+                        value={newStudentClass}
+                        onChange={(e) => setNewStudentClass(e.target.value)}
+                        required={true}
+                        placeholder="Ex: TADS25"
+                        labelClassName="!text-xs"
+                      />
+                    </div>
+
+                    <div className="pt-2">
+                      <Button type="submit" variant="primary" fullWidth={true} disabled={submitting}>
+                        {submitting ? "Cadastrando..." : "Cadastrar Aluno"}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
             </div>
           )}
-        </div>
 
-        {/* ADD NEW ITEM SECTION */}
-        <div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm sticky top-8">
-            {activeTab === "classes" ? (
-              <form onSubmit={handleAddClass} className="space-y-4">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Adicionar Turma</h2>
-                <InputField labelText="Código da Turma" type="text" id="newClassName" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} required placeholder="Ex: TADS25" labelClassName="!text-xs" />
-                <InputField labelText="Curso" type="text" id="newClassCourse" value={newClassCourse} onChange={(e) => setNewClassCourse(e.target.value)} required placeholder="Ex: Sistemas" labelClassName="!text-xs" />
-                
-                <div>
-                  <label className="block text-gray-700 font-semibold text-xs uppercase mb-2">Professor Focal</label>
-                  <select value={newClassTeacher} onChange={(e) => setNewClassTeacher(e.target.value)} required className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-blue-600 text-sm bg-white">
-                    <option value="" disabled>Selecione um professor</option>
-                    {teachers.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-                  </select>
+          {/* TAB: TEACHERS */}
+          {activeTab === "teachers" && (
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              
+              {/* LISTA DE PROFESSORES */}
+              <div className="xl:col-span-2 space-y-6">
+                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-900">Professores Cadastrados</h2>
+                    <p className="text-sm text-gray-500">Equipe docente habilitada para avaliar projetos.</p>
+                  </div>
+                  <div className="overflow-x-auto max-h-[600px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="sticky top-0 bg-gray-50/95 backdrop-blur z-10">
+                        <tr className="text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-100">
+                          <th className="px-6 py-4">Nome</th>
+                          <th className="px-6 py-4">E-mail de Acesso</th>
+                          <th className="px-6 py-4">Especialidade</th>
+                          <th className="px-6 py-4 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {teachers.map((prof) => (
+                          <tr key={prof.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-6 py-4 font-medium text-gray-900">{prof.name}</td>
+                            <td className="px-6 py-4 text-gray-600">{prof.email}</td>
+                            <td className="px-6 py-4 text-gray-600">{prof.specialty}</td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => handleRemoveUser(prof, "professor")}
+                                className="text-red-500 hover:text-red-700 font-medium text-sm transition-colors"
+                              >
+                                Remover
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                
-                <Button type="submit" variant="primary" fullWidth={true} className="mt-4">Registrar Turma</Button>
-              </form>
-            ) : (
-              <form onSubmit={handleAddTeacher} className="space-y-4">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Adicionar Professor Focal</h2>
-                <InputField labelText="Nome do Professor" type="text" id="newTeacherName" value={newTeacherName} onChange={(e) => setNewTeacherName(e.target.value)} required placeholder="Ex: Prof. João" labelClassName="!text-xs" />
-                <InputField labelText="E-mail" type="email" id="newTeacherEmail" value={newTeacherEmail} onChange={(e) => setNewTeacherEmail(e.target.value)} required placeholder="joao@senac.br" labelClassName="!text-xs" />
-                
-                <Button type="submit" variant="primary" fullWidth={true} className="mt-4">Cadastrar Professor</Button>
-              </form>
-            )}
-          </div>
-        </div>
-      </div>
+              </div>
+
+              {/* FORMULARIO NOVO PROFESSOR */}
+              <div className="xl:col-span-1">
+                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm sticky top-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-2">Cadastrar Professor</h2>
+                  <p className="text-sm text-gray-500 mb-6">Adicione um novo avaliador à plataforma.</p>
+
+                  <form onSubmit={handleAddTeacher} className="space-y-4">
+                    <InputField
+                      labelText="Nome Completo"
+                      type="text"
+                      id="newTeacherName"
+                      value={newTeacherName}
+                      onChange={(e) => setNewTeacherName(e.target.value)}
+                      required={true}
+                      placeholder="Ex: Ana Maria Silva"
+                      labelClassName="!text-xs"
+                    />
+
+                    <InputField
+                      labelText="E-mail"
+                      type="email"
+                      id="newTeacherEmail"
+                      value={newTeacherEmail}
+                      onChange={(e) => setNewTeacherEmail(e.target.value)}
+                      required={true}
+                      placeholder="Ex: ana@instituicao.edu.br"
+                      labelClassName="!text-xs"
+                    />
+
+                    <InputField
+                      labelText="Senha de Acesso"
+                      type="password"
+                      id="newTeacherPassword"
+                      value={newTeacherPassword}
+                      onChange={(e) => setNewTeacherPassword(e.target.value)}
+                      required={true}
+                      placeholder="Mínimo 6 caracteres"
+                      labelClassName="!text-xs"
+                    />
+
+                    <InputField
+                      labelText="Especialidade"
+                      type="text"
+                      id="newTeacherSpecialty"
+                      value={newTeacherSpecialty}
+                      onChange={(e) => setNewTeacherSpecialty(e.target.value)}
+                      required={true}
+                      placeholder="Ex: Desenvolvimento Web"
+                      labelClassName="!text-xs"
+                    />
+
+                    <div className="pt-2">
+                      <Button type="submit" variant="primary" fullWidth={true} disabled={submitting}>
+                        {submitting ? "Cadastrando..." : "Cadastrar Professor"}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

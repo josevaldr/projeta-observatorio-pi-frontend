@@ -28,7 +28,6 @@ import CompanyProfile from "../features/company/pages/Profile.jsx";
 import AdminDashboard from "../features/admin/pages/Dashboard.jsx";
 import AdminManagement from "../features/admin/pages/Management.jsx";
 import AdminMonitoring from "../features/admin/pages/Monitoring.jsx";
-import AdminCuration from "../features/admin/pages/Curation.jsx";
 import AdminProfile from "../features/admin/pages/Profile.jsx";
 
 const studentLinks = [
@@ -53,7 +52,6 @@ const adminLinks = [
   { label: "Painel", path: "/admin" },
   { label: "Cadastros", path: "/admin/cadastros" },
   { label: "Acompanhamento", path: "/admin/acompanhamento" },
-  { label: "Curadoria", path: "/admin/curadoria" },
   { label: "Perfil", path: "/admin/perfil" },
 ];
 
@@ -129,7 +127,6 @@ export const router = createBrowserRouter([
       { index: true, element: <AdminDashboard /> },
       { path: "cadastros", element: <AdminManagement /> },
       { path: "acompanhamento", element: <AdminMonitoring /> },
-      { path: "curadoria", element: <AdminCuration /> },
       { path: "perfil", element: <AdminProfile /> },
     ],
   },
