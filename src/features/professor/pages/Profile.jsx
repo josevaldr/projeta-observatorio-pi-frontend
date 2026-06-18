@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import InputField from "../../../shared/components/InputField";
 import Button from "../../../shared/components/Button";
@@ -7,23 +7,74 @@ export default function Profile() {
   const navigate = useNavigate();
 
   const [editando, setEditando] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const [nome, setNome] = useState(user.nome_usuario || "Carlos Oliveira");
-  const [email, setEmail] = useState(user.email || "carlos.oliveira@senac.br");
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user") || "{}"));
+  
+  const userId = user.id_usuario || user.id || 0;
 
-  // mock dados do professor focal
-  const [dadosFixos] = useState({
-    tipo_usuario: "professor focal",
-    matricula: 11223344,
-    area_atuacao: "Tecnologia da Informação",
-    unidade: "Senac Hub Academy",
+  const [nome, setNome] = useState(user.nome_usuario || user.nome || "");
+  const [email, setEmail] = useState(user.email || "");
+
+  // dados do professor que vêm da API
+  const [profData, setProfData] = useState({
+    especialidade: "",
   });
 
-  // handler provisório sem integração
-  const handleSalvar = (e) => {
+  useEffect(() => {
+    fetchProfessorData();
+  }, [userId]);
+
+  const fetchProfessorData = async () => {
+    try {
+      const resProfs = await fetch("http://127.0.0.1:8000/professores/");
+      if (resProfs.ok) {
+         const profsList = await resProfs.json();
+         const profs = Array.isArray(profsList) ? profsList : (profsList.value || []);
+         const myProf = profs.find(p => p.id_professor === userId || p.id_usuario === userId) || profs[0];
+         if (myProf) {
+            setProfData({
+               especialidade: myProf.especialidade || "Não informada",
+            });
+         }
+      }
+    } catch (e) {
+       console.error("Erro ao carregar dados do professor", e);
+    }
+  };
+
+  const handleSalvar = async (e) => {
     e.preventDefault();
-    setEditando(false);
+    setLoading(true);
+    try {
+      const payload = {
+        nome_usuario: nome,
+        email: email,
+        senha: "not_updated", // dummy para passar na validação do backend
+        tipo_usuario: user.tipo_usuario || "professor"
+      };
+
+      const response = await fetch(`http://127.0.0.1:8000/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const updatedUser = { ...user, nome_usuario: nome, nome: nome, email: email };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        setEditando(false);
+        alert("Perfil atualizado com sucesso!");
+      } else {
+        alert("Erro ao atualizar o perfil. Verifique os dados.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro na comunicação com o servidor.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // handler de logout (sair)
@@ -47,7 +98,7 @@ export default function Profile() {
                   Perfil
                 </h1>
                 <p className="text-xs text-gray-400 capitalize">
-                  {dadosFixos.tipo_usuario}
+                  {user.tipo_usuario || "professor"}
                 </p>
               </div>
 
@@ -136,9 +187,10 @@ export default function Profile() {
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
-                  text="Salvar Alterações"
+                  text={loading ? "Salvando..." : "Salvar Alterações"}
                   variant="primary"
                   fullWidth={false}
+                  disabled={loading}
                 />
                 <Button
                   type="button"
@@ -146,36 +198,21 @@ export default function Profile() {
                   variant="secondary"
                   fullWidth={false}
                   onClick={() => setEditando(false)}
+                  disabled={loading}
                 />
               </div>
             </form>
           </>
         )}
 
-        {/* 3. DETALHES ADICIONAIS (Fica visível em ambos os modos, pois são dados profissionais fixos) */}
+        {/* 3. DETALHES ADICIONAIS */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4 mb-8">
           <div>
             <span className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-1">
               Área de Atuação
             </span>
             <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.area_atuacao}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-1">
-              Unidade Escolar
-            </span>
-            <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.unidade}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-1">
-              Matrícula
-            </span>
-            <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.matricula}
+              {profData.especialidade || "-"}
             </span>
           </div>
           <div>
@@ -183,7 +220,7 @@ export default function Profile() {
               Tipo de Conta
             </span>
             <span className="text-sm font-bold text-gray-900 capitalize">
-              {dadosFixos.tipo_usuario}
+              {user.tipo_usuario || "professor focal"}
             </span>
           </div>
         </div>

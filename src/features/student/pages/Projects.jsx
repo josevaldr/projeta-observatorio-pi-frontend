@@ -40,10 +40,44 @@ export default function ProjetosAluno() {
       setLoadingInitial(true);
       const response = await fetch("http://127.0.0.1:8000/projetos/");
       if (response.ok) {
-        const data = await response.json();
+        const resData = await response.json();
+        const data = Array.isArray(resData) ? resData : (resData.value || []);
+        
         // Filtra para exibir apenas os projetos que contêm o id do usuário atual na equipe
         const meus = data.filter(p => p.equipe && p.equipe.id_alunos && p.equipe.id_alunos.includes(userId));
-        setMeusProjetos(meus);
+        
+        // Enriquecer com avaliações e formatar campos para a UI
+        const enriched = await Promise.all(meus.map(async p => {
+          let avaliacaoFormatada = null;
+          if (p.cod_id_avaliacao) {
+            try {
+               const evalRes = await fetch(`http://127.0.0.1:8000/avaliacoes/${p.cod_id_avaliacao}`);
+               if (evalRes.ok) {
+                  const evalData = await evalRes.json();
+                  avaliacaoFormatada = {
+                     nota: parseFloat(evalData.conceito) || 0,
+                     comentarios: evalData.feedback || "",
+                     avaliador: "Professor(a)",
+                     data: evalData.data_avaliacao ? evalData.data_avaliacao.split("-").reverse().join("/") : new Date().toLocaleDateString("pt-BR")
+                  };
+               }
+            } catch (e) {
+               console.error("Erro ao carregar avaliacao", e);
+            }
+          }
+
+          let rawStatus = String(p.status_projeto || "pendente").toLowerCase();
+          if (rawStatus === "avaliado") rawStatus = "concluido";
+
+          return {
+            ...p,
+            status_projeto: rawStatus,
+            data_upload: p.data_upload ? p.data_upload.split("-").reverse().join("/") : "Sem data",
+            avaliacao: avaliacaoFormatada
+          };
+        }));
+
+        setMeusProjetos(enriched);
       }
     } catch (err) {
       console.error("Erro ao buscar projetos:", err);
