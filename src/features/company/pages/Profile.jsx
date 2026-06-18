@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import InputField from "../../../shared/components/InputField";
 import Button from "../../../shared/components/Button";
@@ -7,26 +7,76 @@ export default function Profile() {
   const navigate = useNavigate();
 
   const [editando, setEditando] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const [nomeContato, setNomeContato] = useState(user.nome_usuario || "Recrutamento Tech Corp");
-  const [email, setEmail] = useState(user.email || "vagas@techcorp.com.br");
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user") || "{}"));
+  const userId = user.id_usuario || user.id || 0;
 
-  // mock dados da empresa
-  const [dadosFixos] = useState({
-    tipo_usuario: "empresa parceira",
-    cnpj: "12.345.678/0001-90",
-    ramo_atuacao: "Desenvolvimento de Software",
-    localizacao: "São Paulo, SP",
+  const [nomeContato, setNomeContato] = useState(user.nome_usuario || user.nome || "");
+  const [email, setEmail] = useState(user.email || "");
+
+  // dados da empresa da API
+  const [empresaData, setEmpresaData] = useState({
+    cnpj: "",
   });
 
-  // handler provisório sem integração
-  const handleSalvar = (e) => {
-    e.preventDefault();
-    setEditando(false);
+  useEffect(() => {
+    fetchEmpresaData();
+  }, [userId]);
+
+  const fetchEmpresaData = async () => {
+    try {
+      const resEmpresas = await fetch("http://127.0.0.1:8000/empresas/");
+      if (resEmpresas.ok) {
+         const list = await resEmpresas.json();
+         const empresas = Array.isArray(list) ? list : (list.empresas || list.value || []);
+         // encontra a empresa pelo usuario logado (ou a primeira, caso id nao bata para debug)
+         const myEmpresa = empresas.find(e => e.id_empresa === userId || e.id_usuario === userId) || empresas[0];
+         if (myEmpresa) {
+            setEmpresaData({
+               cnpj: myEmpresa.cnpj || "Não informado",
+            });
+         }
+      }
+    } catch (e) {
+       console.error("Erro ao carregar dados da empresa", e);
+    }
   };
 
-  // handler de logout (sair)
+  const handleSalvar = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const payload = {
+        nome_usuario: nomeContato,
+        email: email,
+        senha: "not_updated",
+        tipo_usuario: user.tipo_usuario || "empresa"
+      };
+
+      const response = await fetch(`http://127.0.0.1:8000/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const updatedUser = { ...user, nome_usuario: nomeContato, nome: nomeContato, email: email };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        setEditando(false);
+        alert("Perfil atualizado com sucesso!");
+      } else {
+        alert("Erro ao atualizar o perfil. Verifique os dados.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro na comunicação com o servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSair = (e) => {
     e.preventDefault();
     localStorage.removeItem("user");
@@ -37,21 +87,18 @@ export default function Profile() {
   return (
     <div className="flex-1 bg-white min-h-screen p-8 text-gray-800 flex flex-col justify-between">
       <div>
-        {/* Renderização Condicional: Se NÃO estiver editando, mostra o Perfil normal */}
         {!editando ? (
           <>
-            {/* --- TELA DE VISUALIZAÇÃO --- */}
             <header className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-0.5">
                   Perfil Corporativo
                 </h1>
                 <p className="text-xs text-gray-400 capitalize">
-                  {dadosFixos.tipo_usuario}
+                  {user.tipo_usuario || "empresa parceira"}
                 </p>
               </div>
 
-              {/* Botão que ativa o modo de edição */}
               <Button
                 type="button"
                 variant="primary"
@@ -76,7 +123,6 @@ export default function Profile() {
               </Button>
             </header>
 
-            {/* Card Principal */}
             <div className="bg-white border border-gray-100 rounded-2xl p-6 flex items-center gap-5 mb-6">
               <div className="w-20 h-20 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-2xl shrink-0">
                 {nomeContato
@@ -96,7 +142,6 @@ export default function Profile() {
           </>
         ) : (
           <>
-            {/* --- TELA DO FORMULÁRIO DE EDIÇÃO --- */}
             <header className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-0.5">
                 Editar Contato
@@ -110,7 +155,6 @@ export default function Profile() {
               onSubmit={handleSalvar}
               className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs max-w-2xl mb-6 space-y-4"
             >
-              {/* Campo Nome */}
               <InputField
                 labelText="Nome do Responsável / Departamento"
                 type="text"
@@ -121,7 +165,6 @@ export default function Profile() {
                 labelClassName="!text-xs !font-semibold !text-gray-400 !uppercase !tracking-wider !mb-2"
               />
 
-              {/* Campo E-mail */}
               <InputField
                 labelText="E-mail de Contato"
                 type="email"
@@ -132,13 +175,13 @@ export default function Profile() {
                 labelClassName="!text-xs !font-semibold !text-gray-400 !uppercase !tracking-wider !mb-2"
               />
 
-              {/* Botões do Formulário */}
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
-                  text="Salvar Alterações"
+                  text={loading ? "Salvando..." : "Salvar Alterações"}
                   variant="primary"
                   fullWidth={false}
+                  disabled={loading}
                 />
                 <Button
                   type="button"
@@ -146,36 +189,20 @@ export default function Profile() {
                   variant="secondary"
                   fullWidth={false}
                   onClick={() => setEditando(false)}
+                  disabled={loading}
                 />
               </div>
             </form>
           </>
         )}
 
-        {/* 3. DETALHES ADICIONAIS (Dados corporativos fixos) */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4 mb-8">
-          <div>
-            <span className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-1">
-              Ramo de Atuação
-            </span>
-            <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.ramo_atuacao}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-1">
-              Localização Sede
-            </span>
-            <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.localizacao}
-            </span>
-          </div>
           <div>
             <span className="text-xs font-semibold text-gray-400 block uppercase tracking-wider mb-1">
               CNPJ
             </span>
             <span className="text-sm font-bold text-gray-900">
-              {dadosFixos.cnpj}
+              {empresaData.cnpj || "-"}
             </span>
           </div>
           <div>
@@ -189,7 +216,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* 4. BOTÃO SAIR */}
         {!editando && (
           <Button
             type="button"

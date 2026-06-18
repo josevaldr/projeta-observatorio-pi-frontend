@@ -1,117 +1,119 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import ProjectModal from "../../projects/components/ProjectModal";
 import Button from "../../../shared/components/Button";
 
-const MOCK_SHOWCASE_PROJECTS = [
-  {
-    id: 1,
-    titulo: "Sistema de Gestão Escolar Integrado",
-    descricao: "Um sistema completo para gerenciar matrículas, notas e faltas com dashboard analítico em tempo real.",
-    data_upload: "02/11/2023",
-    status_projeto: "concluido",
-    link_projeto: "https://github.com/projeto/gestao-escolar",
-    area: "Desenvolvimento Web",
-    turma: "TADS25.103",
-    autorizado_exibicao: true,
-    contatos: ["ana.beatriz@email.mock", "carlos.edu@email.mock"],
-    equipe: {
-      nome_equipe: "Code Masters",
-      alunos: ["Ana Beatriz", "Carlos Eduardo"],
-    },
-    avaliacao: {
-      nota: 9.8,
-      avaliador: "Prof. Silva",
-      data: "10/11/2023",
-      comentarios: "Arquitetura impecável e excelente código.",
-    },
-  },
-  {
-    id: 2,
-    titulo: "App de Doação de Sangue Solidário",
-    descricao: "Aplicativo mobile que conecta doadores a hemocentros, enviando notificações push de acordo com o tipo sanguíneo em falta.",
-    data_upload: "30/10/2023",
-    status_projeto: "concluido",
-    link_projeto: "https://github.com/projeto/doacao-sangue",
-    area: "Desenvolvimento Mobile",
-    turma: "TADS25.103",
-    autorizado_exibicao: true,
-    contatos: ["lucas.almeida@email.mock"],
-    equipe: {
-      nome_equipe: "Save Lives",
-      alunos: ["Lucas Almeida", "Mariana Costa"],
-    },
-    avaliacao: {
-      nota: 9.5,
-      avaliador: "Prof. Oliveira",
-      data: "05/11/2023",
-      comentarios: "Ótima iniciativa e UX muito bem desenhada.",
-    },
-  },
-  {
-    id: 3,
-    titulo: "IoT na Agricultura Familiar",
-    descricao: "Rede de sensores de baixo custo para monitoramento de umidade do solo, ajudando pequenos produtores a economizar água.",
-    data_upload: "05/11/2023",
-    status_projeto: "concluido",
-    link_projeto: "https://github.com/projeto/agro-iot",
-    area: "Internet das Coisas",
-    turma: "TSI24.201",
-    autorizado_exibicao: true,
-    contatos: ["joao.pedro@email.mock"],
-    equipe: {
-      nome_equipe: "AgroTech",
-      alunos: ["João Pedro"],
-    },
-    avaliacao: {
-      nota: 8.9,
-      avaliador: "Prof. Mendes",
-      data: "12/11/2023",
-      comentarios: "Protótipo funcional, ótimo impacto social.",
-    },
-  },
-  {
-    id: 4,
-    titulo: "E-commerce não autorizado",
-    descricao: "Este projeto não deve aparecer na vitrine.",
-    data_upload: "01/11/2023",
-    status_projeto: "concluido",
-    link_projeto: "",
-    area: "Desenvolvimento Web",
-    turma: "TSI24.201",
-    autorizado_exibicao: false,
-    contatos: [],
-    equipe: {
-      nome_equipe: "Secret Team",
-      alunos: ["Anon"],
-    },
-    avaliacao: {
-      nota: 10,
-      avaliador: "Prof. Mendes",
-      data: "02/11/2023",
-      comentarios: "Perfeito.",
-    },
-  },
-];
-
 export default function Showcase() {
-  const [filterArea, setFilterArea] = useState("Todas");
   const [filterMinScore, setFilterMinScore] = useState(0);
   const [projetoSelecionado, setProjetoSelecionado] = useState(null);
+  
+  const [showcaseProjects, setShowcaseProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Apenas projetos autorizados para exibição
-  const authorizedProjects = MOCK_SHOWCASE_PROJECTS.filter(
-    (p) => p.autorizado_exibicao
-  );
+  useEffect(() => {
+    fetchShowcaseData();
+  }, []);
 
-  const areasList = ["Todas", ...new Set(authorizedProjects.map((p) => p.area))];
+  const fetchShowcaseData = async () => {
+    try {
+      setLoading(true);
+      // 1. Fetch Alunos (para descobrir as turmas)
+      const alunosRes = await fetch("http://127.0.0.1:8000/alunos/");
+      let alunosMap = {};
+      if (alunosRes.ok) {
+         const alunosData = await alunosRes.json();
+         const listaAlunos = alunosData.alunos || [];
+         listaAlunos.forEach(a => {
+            alunosMap[a.id_aluno] = {
+              nome: a.nome_usuario || a.usuario?.nome_usuario || `Aluno #${a.id_aluno}`,
+              email: a.usuario?.email || "",
+              turma: a.turma || "Turma Indefinida"
+            };
+         });
+      }
+
+      // 2. Fetch Projetos
+      const projRes = await fetch("http://127.0.0.1:8000/projetos/");
+      if (projRes.ok) {
+         const resData = await projRes.json();
+         const data = Array.isArray(resData) ? resData : (resData.value || []);
+         
+         // Pegar apenas projetos avaliados/concluidos
+         const avaliados = data.filter(p => String(p.status_projeto || "").toLowerCase() === "avaliado" || String(p.status_projeto || "").toLowerCase() === "concluido");
+
+         // 3. Enriquecer com avaliações e montar o objeto final
+         const enriched = await Promise.all(avaliados.map(async p => {
+            let avaliacaoFormatada = null;
+            if (p.cod_id_avaliacao) {
+               try {
+                  const evalRes = await fetch(`http://127.0.0.1:8000/avaliacoes/${p.cod_id_avaliacao}`);
+                  if (evalRes.ok) {
+                     const evalData = await evalRes.json();
+                     avaliacaoFormatada = {
+                        nota: parseFloat(evalData.conceito) || 0,
+                        avaliador: "Professor(a)",
+                        data: evalData.data_avaliacao ? evalData.data_avaliacao.split("-").reverse().join("/") : new Date().toLocaleDateString("pt-BR"),
+                        comentarios: evalData.feedback || ""
+                     };
+                  }
+               } catch (e) {
+                 console.error("Erro avaliacao", e);
+               }
+            }
+
+            // Identificar turma com base no primeiro membro da equipe
+            let turmaProjeto = "Não Especificada";
+            let contatosEmail = [];
+            let membrosNomes = [];
+
+            if (p.equipe && p.equipe.id_alunos) {
+               p.equipe.id_alunos.forEach(id_aluno => {
+                  const alunoData = alunosMap[id_aluno];
+                  if (alunoData) {
+                     if (turmaProjeto === "Não Especificada" && alunoData.turma) {
+                        turmaProjeto = alunoData.turma;
+                     }
+                     if (alunoData.email) contatosEmail.push(alunoData.email);
+                     membrosNomes.push(alunoData.nome);
+                  }
+               });
+            }
+
+            if (membrosNomes.length === 0 && p.equipe?.alunos) {
+               membrosNomes = p.equipe.alunos; // Fallback para array de strings se existir
+            }
+
+            return {
+               id: p.id_projeto,
+               titulo: p.titulo,
+               descricao: p.descricao || "Sem descrição.",
+               data_upload: p.data_upload ? p.data_upload.split("-").reverse().join("/") : "Sem data",
+               status_projeto: "concluido",
+               link_projeto: p.link_projeto || "",
+               turma: turmaProjeto,
+               contatos: contatosEmail,
+               equipe: {
+                  nome_equipe: p.equipe?.nome_equipe || "Equipe",
+                  alunos: membrosNomes
+               },
+               avaliacao: avaliacaoFormatada || { nota: 0, avaliador: "-", data: "-", comentarios: "" }
+            };
+         }));
+
+         setShowcaseProjects(enriched);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar vitrine:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProjects = useMemo(() => {
-    return authorizedProjects.filter((p) => {
-      const matchArea = filterArea === "Todas" || p.area === filterArea;
+    return showcaseProjects.filter((p) => {
       const matchScore = (p.avaliacao?.nota || 0) >= filterMinScore;
-      return matchArea && matchScore;
+      return matchScore;
     });
-  }, [filterArea, filterMinScore, authorizedProjects]);
+  }, [filterMinScore, showcaseProjects]);
 
   return (
     <div className="flex-1 bg-gray-50 min-h-screen p-8 text-gray-800">
@@ -127,24 +129,7 @@ export default function Showcase() {
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Área de Atuação
-            </label>
-            <select
-              value={filterArea}
-              onChange={(e) => setFilterArea(e.target.value)}
-              className="w-full border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:ring-blue-500 focus:border-blue-500"
-            >
-              {areasList.map((area) => (
-                <option key={area} value={area}>
-                  {area}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div className="flex flex-col md:flex-row gap-6 max-w-md">
           <div className="flex-1">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
               Nota Mínima na Avaliação: {filterMinScore}
@@ -167,70 +152,73 @@ export default function Showcase() {
       </header>
 
       {/* SHOWCASE GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {filteredProjects.map((project) => (
-          <div
-            key={project.id}
-            className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
-            onClick={() => setProjetoSelecionado(project)}
-          >
-            {/* CARD BANNER (Decorative) */}
-            <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-700 relative p-4 flex items-start justify-between">
-              <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-md">
-                {project.area}
-              </span>
-              <span className="flex items-center gap-1 bg-white text-indigo-700 text-xs font-black px-2.5 py-1 rounded-md shadow-sm">
-                ⭐ {project.avaliacao.nota.toFixed(1)}
-              </span>
-            </div>
+      {loading ? (
+        <div className="text-center py-20 text-gray-500">
+          Carregando projetos de destaque...
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {filteredProjects.map((project) => (
+            <div
+              key={project.id}
+              className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
+              onClick={() => setProjetoSelecionado(project)}
+            >
+              {/* CARD BANNER (Decorative) */}
+              <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-700 relative p-4 flex items-start justify-between">
+                <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-md">
+                  Destaque
+                </span>
+                <span className="flex items-center gap-1 bg-white text-indigo-700 text-xs font-black px-2.5 py-1 rounded-md shadow-sm">
+                  ⭐ {project.avaliacao.nota.toFixed(1)}
+                </span>
+              </div>
 
-            {/* CARD BODY */}
-            <div className="p-6 flex flex-col flex-1">
-              <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                {project.titulo}
-              </h2>
-              <p className="text-sm text-gray-600 line-clamp-3 mb-4 flex-1">
-                {project.descricao}
-              </p>
+              {/* CARD BODY */}
+              <div className="p-6 flex flex-col flex-1">
+                <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  {project.titulo}
+                </h2>
+                <p className="text-sm text-gray-600 line-clamp-3 mb-4 flex-1">
+                  {project.descricao}
+                </p>
 
-              <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
-                    {project.equipe.nome_equipe.substring(0, 2).toUpperCase()}
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
+                      {project.equipe.nome_equipe.substring(0, 2).toUpperCase()}
+                    </div>
+                    <span className="text-xs font-medium text-gray-700">
+                      {project.equipe.nome_equipe}
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-gray-700">
-                    {project.equipe.nome_equipe}
-                  </span>
+                  <span className="text-xs text-gray-400">{project.turma}</span>
                 </div>
-                <span className="text-xs text-gray-400">{project.turma}</span>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {filteredProjects.length === 0 && (
-          <div className="col-span-full py-16 text-center bg-white rounded-2xl border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Nenhum projeto encontrado
-            </h3>
-            <p className="text-gray-500">
-              Tente ajustar os filtros de busca para encontrar mais projetos.
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              fullWidth={false}
-              className="mt-6"
-              onClick={() => {
-                setFilterArea("Todas");
-                setFilterMinScore(0);
-              }}
-            >
-              Limpar Filtros
-            </Button>
-          </div>
-        )}
-      </div>
+          {filteredProjects.length === 0 && (
+            <div className="col-span-full py-16 text-center bg-white rounded-2xl border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Nenhum projeto encontrado
+              </h3>
+              <p className="text-gray-500">
+                Tente ajustar o filtro de nota para encontrar mais projetos.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                fullWidth={false}
+                className="mt-6"
+                onClick={() => setFilterMinScore(0)}
+              >
+                Limpar Filtro
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* MODAL DETALHADO DO PROJETO */}
       <ProjectModal
