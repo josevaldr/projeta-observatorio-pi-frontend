@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import InputField from "../../../shared/components/InputField";
-import { useRegister } from "../../../shared/hooks/useRegister.js";
+import { useRegister } from "../hooks/useRegister.js";
 import Button from "../../../shared/components/Button";
 
 export default function Register() {

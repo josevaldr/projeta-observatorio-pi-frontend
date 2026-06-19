@@ -4,7 +4,7 @@ import Button from "../../../shared/components/Button";
 import { Link } from "react-router-dom";
 import logo from "../../../assets/PROjeta logo.svg";
 
-import { useLogin } from "../../../shared/hooks/useLogin.js";
+import { useLogin } from "../hooks/useLogin.js";
 
 export default function Login() {
   const {
