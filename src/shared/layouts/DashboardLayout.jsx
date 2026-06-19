@@ -9,7 +9,6 @@ export default function DashboardLayout({ sidebarLinks }) {
       
       {/* Main content area */}
       <main className="flex-1 p-8 overflow-y-auto">
-        {/* The child route components will be injected here */}
         <Outlet /> 
       </main>
     </div>

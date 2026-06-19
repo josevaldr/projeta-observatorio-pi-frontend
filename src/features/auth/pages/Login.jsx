@@ -2,7 +2,7 @@ import { useState } from "react";
 import InputField from "../../../shared/components/InputField";
 import Button from "../../../shared/components/Button";
 import { Link } from "react-router-dom";
-import logo from "../../../assets/Frame 1.png";
+import logo from "../../../assets/PROjeta logo.svg";
 
 import { useLogin } from "../../../shared/hooks/useLogin.js";
 

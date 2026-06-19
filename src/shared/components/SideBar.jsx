@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/PROjeta logo.svg";
 
 export default function Sidebar({ links }) {
   const location = useLocation();

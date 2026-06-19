@@ -55,7 +55,6 @@ const adminLinks = [
   { label: "Perfil", path: "/admin/perfil" },
 ];
 
-// Define and export the router
 export const router = createBrowserRouter([
   {
     path: "/",
