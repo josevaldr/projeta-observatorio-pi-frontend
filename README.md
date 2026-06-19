@@ -7,31 +7,80 @@ Este repositório concentra exclusivamente a **camada de Frontend (Interface do 
 
 ---
 
-## 🎨 O Ecossistema Visual & Telas Previstas
-A interface foi projetada para atender a quatro perfis distintos de usuários mapeados na Engenharia de Requisitos:
+## 🎨 O Ecossistema Visual & Telas
+A interface foi projetada para atender aos diferentes perfis de usuários mapeados no sistema:
 
 ### 1. Páginas de Acesso Público
-* **Home / Informações:** Apresentação dos objetivos e benefícios do Observatório.
-* **Cadastro & Login:** Fluxo unificado para Alunos, Professores e Empresas.
-* **Contato:** Canal de comunicação direto via plataforma.
+* **Cadastro & Login:** Fluxo de autenticação e criação de conta.
+* **Portfólio Público:** Página dedicada para visualização externa do currículo e projetos de cada aluno (via link compartilhável).
 
 ### 2. Painel do Aluno (Área Logada)
-* **Gerenciamento de Perfil:** Edição de competências, habilidades e foto[cite: 37].
-* **Submissão de Projetos:** Interface intuitiva (baseada no protótipo) com campos para título, descrição, tags e upload de artefatos.
-* **Vitrine de Portfólio:** Geração automática e customização do link público para o mercado.
+* **Feed:** Timeline com atualizações, avisos e visão geral das atividades.
+* **Projetos:** Gerenciamento, submissão de Projetos Integradores e upload de artefatos.
+* **Portfólio:** Ferramenta para criação e customização da vitrine profissional.
+* **Perfil:** Edição de informações pessoais, competências e habilidades.
 
-### 3. Painel de Professores & Monitores
-* [cite_start]**Módulo de Avaliação:** Visualização de turmas e atribuição de notas/feedbacks estruturados.
+### 3. Painel do Professor
+* **Turmas:** Visualização e gerenciamento das turmas sob responsabilidade do docente.
+* **Projetos:** Acompanhamento, orientação e avaliação dos trabalhos submetidos pelos alunos.
+* **Perfil:** Gerenciamento das informações e dados do professor.
 
-### 4. Portal das Empresas
-* **Busca Avançada:** Filtros inteligentes por tecnologias, habilidades e áreas de conhecimento.
+### 4. Portal da Empresa
+* **Vitrine:** Acesso simplificado aos projetos e portfólios em destaque para prospecção de talentos.
+* **Perfil:** Gerenciamento de informações institucionais da empresa parceira.
+
+### 5. Painel da Coordenação (Admin)
+* **Painel (Dashboard):** Visão geral estratégica sobre o andamento e uso da plataforma.
+* **Cadastros:** Gerenciamento e aprovação de usuários (alunos, professores e empresas).
+* **Acompanhamento:** Monitoramento global das atividades e métricas institucionais.
+* **Perfil:** Edição de credenciais administrativas.
 
 ---
 
-## 🛠️ Restrições Técnicas do Frontend
-Para garantir o sucesso da entrega acadêmica, o desenvolvimento da interface deve respeitar rigorosamente os seguintes critérios do documento de arquitetura:
+## 💻 Tecnologias Utilizadas
 
-* **Responsividade Obrigatória:** A aplicação deve ser 100% adaptável, oferecendo usabilidade plena tanto em desktops quanto em smartphones.
-* **Comportamento Temporal:** Código otimizado para que páginas, formulários e buscas carreguem com extrema agilidade, mesmo sob conexões de dados móveis lentas.
-* **Tecnologias Open Source:** Uso restrito de bibliotecas e ferramentas de código aberto de custo zero de licenciamento.
-* **Conformidade com a LGPD:** Ocultação/mascaramento visual de dados sensíveis e controle estrito de acessos autenticados.
+Este projeto foi construído utilizando as seguintes tecnologias:
+
+* **[React](https://react.dev/) (v19)** - Biblioteca JavaScript para construção de interfaces de usuário.
+* **[Vite](https://vitejs.dev/)** - Ferramenta de build ágil para o desenvolvimento.
+* **[Tailwind CSS](https://tailwindcss.com/) (v4)** - Framework CSS utility-first para estilização rápida e responsiva.
+* **[React Router DOM](https://reactrouter.com/)** - Biblioteca para gerenciamento de rotas no frontend.
+
+---
+
+## 🚀 Como Executar o Projeto Localmente
+
+### Pré-requisitos
+* **[Node.js](https://nodejs.org/)** instalado (versão 18 ou superior recomendada).
+
+### Passos para Instalação e Execução
+
+1. Clone este repositório para a sua máquina local (ou faça o download do ZIP):
+   ```bash
+   git clone <https://github.com/josevaldr/projeta-observatorio-pi-frontend.git>
+   ```
+
+2. Acesse a pasta do projeto pelo terminal:
+   ```bash
+   cd projeta-observatorio-pi-frontend
+   ```
+
+3. Instale as dependências necessárias utilizando o npm:
+   ```bash
+   npm install
+   ```
+
+4. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+5. O servidor será iniciado e exibirá uma URL no terminal. Acesse a aplicação no seu navegador (geralmente em `http://localhost:5173`).
+
+---
+
+## 🔗 Repositório do Backend
+
+A API, persistência de dados e regras de negócio estão implementadas no Backend da aplicação. Você pode acessar o repositório oficial no link abaixo:
+
+* **Backend Repository:** [https://github.com/josevaldr/projeta-observatorio-pi-backend](https://github.com/josevaldr/projeta-observatorio-pi-backend)
